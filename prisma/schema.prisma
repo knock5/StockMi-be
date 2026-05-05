@@ -1,0 +1,58 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+model Item {
+  id                    Int                    @id @default(autoincrement())
+  name                  String
+  sku                   String                 @unique
+  brand                 String?
+  unit                  String
+  imageUrl              String?
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  inventoryTransactions InventoryTransaction[]
+}
+
+model InventoryTransaction {
+  id        Int             @id @default(autoincrement())
+  itemId    Int
+  type      TransactionType
+  quantity  Decimal         @db.Decimal(10, 2)
+  unit      String
+  date      DateTime
+  note      String?
+  expDate   DateTime?
+  userId    Int?
+  createdAt DateTime        @default(now())
+  item      Item            @relation(fields: [itemId], references: [id])
+  user      User?           @relation(fields: [userId], references: [id])
+
+  @@index([itemId], map: "InventoryTransaction_itemId_fkey")
+  @@index([userId], map: "InventoryTransaction_userId_fkey")
+}
+
+model User {
+  id           Int                    @id @default(autoincrement())
+  name         String
+  email        String                 @unique
+  password     String
+  role         UserRole               @default(STAFF)
+  createdAt    DateTime               @default(now())
+  transactions InventoryTransaction[]
+}
+
+enum TransactionType {
+  IN
+  OUT
+}
+
+enum UserRole {
+  ADMIN
+  STAFF
+}
