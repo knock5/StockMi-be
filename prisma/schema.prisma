@@ -8,14 +8,15 @@ datasource db {
 }
 
 model Item {
-  id                    Int                    @id @default(autoincrement())
-  name                  String
-  sku                   String                 @unique
-  brand                 String?
-  unit                  String
-  imageUrl              String?
-  createdAt             DateTime               @default(now())
-  updatedAt             DateTime               @updatedAt
+  id        Int      @id @default(autoincrement())
+  name      String
+  sku       String   @unique
+  brand     String?
+  unit      String
+  imageUrl  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   inventoryTransactions InventoryTransaction[]
 }
 
@@ -34,7 +35,6 @@ model InventoryTransaction {
   user      User?           @relation(fields: [userId], references: [id])
 
   @@index([itemId], map: "InventoryTransaction_itemId_fkey")
-  @@index([userId], map: "InventoryTransaction_userId_fkey")
 }
 
 model User {
