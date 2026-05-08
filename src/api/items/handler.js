@@ -27,29 +27,6 @@ class ItemService {
     }
   }
 
-  async postItemHandler(request, h) {
-    this._validator.validateItemPayload(request.payload);
-
-    const { name, sku, brand, unit, imageUrl } = request.payload;
-    const itemId = await this._service.addItem({
-      name,
-      sku,
-      brand,
-      unit,
-      imageUrl,
-    });
-    const response = h.response({
-      status: "success",
-      message: "Item added successfully",
-      data: {
-        itemId,
-      },
-    });
-    response.code(201);
-
-    return response;
-  }
-
   async getItemByIdHandler(request, h) {
     const { id } = request.params;
     const item = await this._service.getItems(id);
@@ -65,14 +42,38 @@ class ItemService {
     return response;
   }
 
+  async postItemHandler(request, h) {
+    this._validator.validateItemPayload(request.payload);
+
+    const { name, brand, unit, imageUrl } = request.payload;
+
+    const itemId = await this._service.addItem({
+      name,
+      brand,
+      unit,
+      imageUrl,
+    });
+
+    const response = h.response({
+      status: "success",
+      message: "Item added successfully",
+      data: {
+        itemId,
+      },
+    });
+
+    response.code(201);
+
+    return response;
+  }
+
   async editItemByIdHandler(request, h) {
     this._validator.validateItemPayload(request.payload);
     const { id } = request.params;
-    const { name, sku, brand, unit, imageUrl } = request.payload;
+    const { name, brand, unit, imageUrl } = request.payload;
 
     await this._service.editItem(id, {
       name,
-      sku,
       brand,
       unit,
       imageUrl,

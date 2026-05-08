@@ -25,9 +25,12 @@ class ItemServices {
           console.info(
             "Attempting to reconnect Prisma client due to pool timeout...",
           );
+
           await this._prisma.$disconnect();
           await this._prisma.$connect();
+
           console.info("Reconnected Prisma client, retrying findMany...");
+
           return await this._prisma.item.findMany();
         } catch (retryErr) {
           console.error("Retry after reconnect failed:", retryErr);
@@ -40,31 +43,22 @@ class ItemServices {
   }
 
   async addItem({ name, sku, brand, unit, imageUrl }) {
-    const id = `item-${nanoid(16)}`;
-
-    const generateSKU = async (name) => {
-      const baseSKU = name.toUpperCase().replace(/\s+/g, "-").substring(0, 10);
-      let uniqueSKU = baseSKU;
-      let counter = 1;
-
-      while (
-        await this._prisma.item.findUnique({ where: { sku: uniqueSKU } })
-      ) {
-        uniqueSKU = `${baseSKU}-${counter}`;
-        counter++;
-      }
-
-      return uniqueSKU;
+    const generateSKU = (name) => {
+      const prefix = name
+        .split(" ")
+        .map((word) => word.charAt(0).toUpperCase())
+        .join("");
+      const randomSuffix = nanoid(6).toUpperCase();
+      return `${prefix}-${randomSuffix}`;
     };
 
     if (!sku) {
-      sku = await generateSKU(name);
+      sku = generateSKU(name);
     }
 
     try {
-      const newItem = await this._prisma.item.create({
+      const created = await this._prisma.item.create({
         data: {
-          id,
           name,
           sku,
           brand,
@@ -73,8 +67,9 @@ class ItemServices {
         },
       });
 
-      return newItem.id;
+      return created.id;
     } catch (error) {
+      console.error("Error in ItemServices.addItem:", error);
       throw new InvariantError("Failed to add item");
     }
   }
@@ -91,19 +86,31 @@ class ItemServices {
     }
   }
 
-  async editItem(id, { name, sku, brand, unit, imageUrl }) {
+  async editItem(id, { name, brand, unit, imageUrl }) {
     const item = await this._prisma.item.findUnique({ where: { id } });
 
     if (!item) {
       throw new NotFoundError("Item not found");
     }
 
+    const generateSKU = (itemName) => {
+      const prefix = itemName
+        .split(" ")
+        .map((word) => word.charAt(0).toUpperCase())
+        .join("");
+      const randomSuffix = nanoid(6).toUpperCase();
+      return `${prefix}-${randomSuffix}`;
+    };
+
+    // Generate new SKU if name is updated, otherwise keep existing SKU
+    const newSku = name ? generateSKU(name) : item.sku;
+
     try {
       await this._prisma.item.update({
         where: { id },
         data: {
           name,
-          sku,
+          sku: newSku,
           brand,
           unit,
           imageUrl,
