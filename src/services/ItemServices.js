@@ -10,35 +10,9 @@ class ItemServices {
 
   async getAllItems() {
     try {
-      console.debug("ItemServices: fetching all items");
       return await this._prisma.item.findMany();
     } catch (error) {
-      console.error("Error in ItemServices.getAllItems:", error);
-
-      // Attempt a single reconnect for transient pool errors
-      const msg = (error && error.message) || "";
-      if (
-        msg.includes("pool timeout") ||
-        msg.includes("failed to retrieve a connection")
-      ) {
-        try {
-          console.info(
-            "Attempting to reconnect Prisma client due to pool timeout...",
-          );
-
-          await this._prisma.$disconnect();
-          await this._prisma.$connect();
-
-          console.info("Reconnected Prisma client, retrying findMany...");
-
-          return await this._prisma.item.findMany();
-        } catch (retryErr) {
-          console.error("Retry after reconnect failed:", retryErr);
-          throw retryErr;
-        }
-      }
-
-      throw error;
+      throw new InvariantError("Failed to fetch items");
     }
   }
 
@@ -49,6 +23,7 @@ class ItemServices {
         .map((word) => word.charAt(0).toUpperCase())
         .join("");
       const randomSuffix = nanoid(6).toUpperCase();
+
       return `${prefix}-${randomSuffix}`;
     };
 
@@ -69,7 +44,6 @@ class ItemServices {
 
       return created.id;
     } catch (error) {
-      console.error("Error in ItemServices.addItem:", error);
       throw new InvariantError("Failed to add item");
     }
   }
@@ -99,6 +73,7 @@ class ItemServices {
         .map((word) => word.charAt(0).toUpperCase())
         .join("");
       const randomSuffix = nanoid(6).toUpperCase();
+
       return `${prefix}-${randomSuffix}`;
     };
 
